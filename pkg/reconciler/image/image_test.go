@@ -2,6 +2,7 @@ package image_test
 
 import (
 	"fmt"
+	rtesting "knative.dev/pkg/reconciler/testing"
 	"strconv"
 	"strings"
 	"testing"
@@ -19,7 +20,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/kmeta"
-	rtesting "knative.dev/pkg/reconciler/testing"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	corev1alpha1 "github.com/pivotal/kpack/pkg/apis/core/v1alpha1"
@@ -583,6 +583,12 @@ func testImageReconciler(t *testing.T, when spec.G, it spec.S) {
 					WantErr: false,
 					WantDeletes: []clientgotesting.DeleteActionImpl{
 						{
+							ActionImpl: clientgotesting.ActionImpl{
+								Namespace: "some-namespace",
+								Resource: schema.GroupVersionResource{
+									Resource: "persistentvolumeclaims",
+								},
+							},
 							Name: image.CacheName(),
 						},
 					},
@@ -2100,9 +2106,11 @@ func testImageReconciler(t *testing.T, when spec.G, it spec.S) {
 						WantDeletes: []clientgotesting.DeleteActionImpl{
 							{
 								ActionImpl: clientgotesting.ActionImpl{
-									Namespace:   "blah",
-									Verb:        "",
-									Resource:    schema.GroupVersionResource{},
+									Namespace: "some-namespace",
+									Verb:      "",
+									Resource: schema.GroupVersionResource{
+										Resource: "builds",
+									},
 									Subresource: "",
 								},
 								Name: image.Name + "-build-1", // first-build
@@ -2132,9 +2140,11 @@ func testImageReconciler(t *testing.T, when spec.G, it spec.S) {
 						WantDeletes: []clientgotesting.DeleteActionImpl{
 							{
 								ActionImpl: clientgotesting.ActionImpl{
-									Namespace:   "blah",
-									Verb:        "",
-									Resource:    schema.GroupVersionResource{},
+									Namespace: "some-namespace",
+									Verb:      "",
+									Resource: schema.GroupVersionResource{
+										Resource: "builds",
+									},
 									Subresource: "",
 								},
 								Name: image.Name + "-build-1", // first-build

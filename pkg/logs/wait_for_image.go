@@ -37,7 +37,7 @@ func (w *imageWaiter) Wait(ctx context.Context, writer io.Writer, originalImage 
 
 	event, err := watchTools.Until(ctx,
 		originalImage.ResourceVersion,
-		watchOnlyOneImage{kpackClient: w.KpackClient, image: originalImage},
+		watchOnlyOneImage{kpackClient: w.KpackClient, image: originalImage, ctx: ctx},
 		filterErrors(imageUpdateHasResolved(originalImage.Generation)))
 	if err != nil {
 		return "", err
@@ -104,11 +104,12 @@ func filterErrors(condition watchTools.ConditionFunc) watchTools.ConditionFunc {
 type watchOnlyOneImage struct {
 	kpackClient versioned.Interface
 	image       *v1alpha1.Image
+	ctx         context.Context
 }
 
 func (w watchOnlyOneImage) Watch(options v1.ListOptions) (watch.Interface, error) {
 	options.FieldSelector = fmt.Sprintf("metadata.name=%s", w.image.Name)
-	return w.kpackClient.KpackV1alpha1().Images(w.image.Namespace).Watch(options)
+	return w.kpackClient.KpackV1alpha1().Images(w.image.Namespace).Watch(w.ctx, options)
 }
 
 func (w *imageWaiter) waitBuild(ctx context.Context, writer io.Writer, namespace, buildName string) (string, error) {
@@ -123,18 +124,26 @@ func (w *imageWaiter) waitBuild(ctx context.Context, writer io.Writer, namespace
 		}
 	}()
 
-	event, err := watchTools.ListWatchUntil(ctx,
-		&listAndWatchBuild{kpackClient: w.KpackClient, namespace: namespace, buildName: buildName},
-		filterErrors(func(event watch.Event) (bool, error) {
-			build, ok := event.Object.(*v1alpha1.Build)
-			if !ok {
-				return false, errors.New("unexpected object received")
-			}
-
-			return !build.Status.GetCondition(corev1alpha1.ConditionSucceeded).IsUnknown(), nil
-		}))
+	targetBuild, err := w.KpackClient.KpackV1alpha1().Builds(namespace).Get(ctx, buildName, v1.GetOptions{})
 	if err != nil {
 		return "", err
+	}
+
+	event := &watch.Event{Object: targetBuild}
+	if targetBuild.Status.GetCondition(corev1alpha1.ConditionSucceeded).IsUnknown() {
+		event, err = watchTools.Until(ctx, targetBuild.ResourceVersion,
+			&watchBuild{kpackClient: w.KpackClient, namespace: namespace, buildName: buildName},
+			filterErrors(func(event watch.Event) (bool, error) {
+				build, ok := event.Object.(*v1alpha1.Build)
+				if !ok {
+					return false, errors.New("unexpected object received")
+				}
+
+				return !build.Status.GetCondition(corev1alpha1.ConditionSucceeded).IsUnknown(), nil
+			}))
+		if err != nil {
+			return "", err
+		}
 	}
 
 	build, ok := event.Object.(*v1alpha1.Build)
