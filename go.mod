@@ -11,7 +11,7 @@ require (
 	github.com/docker/docker v17.12.0-ce-rc1.0.20190924003213-a8608b5b67c7+incompatible // indirect
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-git/go-git-fixtures v3.5.0+incompatible
-	github.com/go-git/go-git/v5 v5.1.0
+	github.com/go-git/go-git/v5 v5.3.0
 	github.com/go-openapi/spec v0.19.9
 	github.com/google/go-cmp v0.5.1
 	github.com/google/go-containerregistry v0.1.1
@@ -25,7 +25,7 @@ require (
 	github.com/theupdateframework/notary v0.6.2-0.20200804143915-84287fd8df4f
 	github.com/vdemeester/k8s-pkg-credentialprovider v1.17.4
 	go.uber.org/zap v1.15.0
-	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
+	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
 	k8s.io/api v0.17.6
 	k8s.io/apimachinery v0.17.6
